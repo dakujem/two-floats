@@ -51,4 +51,14 @@ class TwoFloats
         }
         return $diff / min(abs($a) + abs($b), PHP_FLOAT_MAX) < ($epsilon ?? PHP_FLOAT_EPSILON);
     }
+
+    private static function _todo_same(float $a, float $b, int $scale = null): bool
+    {
+        // TODO use bcmath when available, fall back to epsilon when not
+        if (!function_exists('bccomp')) {
+            $epsilon = $scale === PHP_FLOAT_DIG ? null : pow(10, -$scale);
+            return static::sameWithEpsilon($a, $b, $epsilon);
+        }
+        return bccomp($a, $b, $scale ?? PHP_FLOAT_DIG) === 0;
+    }
 }
