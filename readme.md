@@ -3,7 +3,8 @@
 ![PHP from Packagist](https://img.shields.io/packagist/php-v/dakujem/cumulus)
 [![Build Status](https://travis-ci.org/dakujem/two-floats.svg?branch=main)](https://travis-ci.org/dakujem/two-floats)
 
-A static helper class to compare two floating-point numbers in PHP.
+**Floating-point number comparison** helper for PHP.\
+Framework agnostic. No requirements.
 
 > 💿 `composer require dakujem/two-floats`
 
@@ -40,7 +41,7 @@ if(TwoFloats::same($num1, $num2)) {
 }
 ```
 
-Optionally, a custom _precision_ can be used, if desired:
+Optionally, a custom _precision_ setting can be used, if desired:
 ```php
 $num1 = 0.0095;
 $num2 = 0.0094;
@@ -61,6 +62,11 @@ if( $c > 0 ) {
 }
 ```
 
+> Note:
+>
+> Internally, BC Math is used for comparison by default, but is not required.
+> A fallback to a native numeric PHP algorithm is used when BC Math extension is not present.
+
 To force either BC-Math-only or native-only algorithm, methods with `*Bcm` and `*Native` suffixes can be used:
 
 ```php
@@ -72,7 +78,7 @@ TwoFloats::compare( ... );       // BC Math by default, with native fallback
 TwoFloats::compareBcm( ... );    // BC Math only
 TwoFloats::compareNative( ... ); // native numeric algo only
 ```
-> A custom _precision_ can be used with all the comparison methods above.
+A custom precision setting can be used with all the comparison methods above.
 
 The native implementation uses _epsilon_ instead of _scale_ for precision.\
 The method `TwoFloats::scaleToEpsilon` can be used to calculate epsilon from scale
