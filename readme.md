@@ -46,13 +46,13 @@ Optionally, a custom _precision_ setting can be used, if desired:
 $num1 = 0.0095;
 $num2 = 0.0094;
 
-TwoFloats::same($num1, $num2);     // false
-TwoFloats::same($num1, $num2, 3);  // true
+TwoFloats::same($num1, $num2);                         // false
+TwoFloats::same($num1, $num2, TwoFloats::epsilon(3));  // true, precision limited to 3 frac. digits
 ```
 
-Using comparison:
+For `< = >` comparison:
 ```php
-$c = TwoFloats::compare($num1, $num2 /*, $precision */);
+$c = TwoFloats::compare($num1, $num2);
 if( $c > 0 ) {
     // $num1 > $num2
 } elseif( $c < 0 ) {
@@ -60,29 +60,45 @@ if( $c > 0 ) {
 } else {
     // $num1 == $num2
 }
+// or with limited precision...
+$c = TwoFloats::compare($num1, $num2, TwoFloats::epsilon($decimals) );
 ```
 
-> Note:
->
-> Internally, BC Math is used for comparison by default, but is not required.
-> A fallback to a native numeric PHP algorithm is used when BC Math extension is not present.
+The method `TwoFloats::epsilon` can be used to calculate _epsilon_ (ε)
+used by the comparison methods
+from the number of desired fraction digits.
 
-To force either BC-Math-only or native-only algorithm, methods with `*Bcm` and `*Native` suffixes can be used:
 
-```php
-TwoFloats::same( ... );          // BC Math by default, with native fallback
-TwoFloats::sameBcm( ... );       // BC Math only
-TwoFloats::sameNative( ... );    // native numeric algo only
+## Two comparison algorithms
 
-TwoFloats::compare( ... );       // BC Math by default, with native fallback
-TwoFloats::compareBcm( ... );    // BC Math only
-TwoFloats::compareNative( ... ); // native numeric algo only
-```
-A custom precision setting can be used with all the comparison methods above.
+Internally, there are two distinct comparison algorithms.
+- one is used for maximum precision
+- other one is used for convenience when intentionally limiting precision
 
-The native implementation uses _epsilon_ instead of _scale_ for precision.\
-The method `TwoFloats::scaleToEpsilon` can be used to calculate epsilon from scale
-and `TwoFloats::epsilonToScale` for the inverse.
+### Relative epsilon algorithm
+
+This algorithm yields **maximum possible platform precision**
+when using floating-point numeric computations.
+
+It is used by default by `TwoFloats::same` and `Twofloats::compare` methods
+when no epsilon is explicitly passed.
+
+The algorithm is described in detail on ["The Floating-Point Guide"](https://floating-point-gui.de/errors/comparison/) site.
+
+### Fixed epsilon
+
+The second algorithm is more practical
+when the precision is intentionally limited to a fixed number of fraction digits.
+
+It is used by `TwoFloats::same` and `Twofloats::compare` methods
+when an epsilon is explicitly passed.
+
+
+🚧 TODO
+
+| Comparison | Epsilon (ε) | Relative ε algo | Absolute ε algo |
+|------------|-------------|:----------------|:----------------|
+| `0.1 == 0.1` | `1` | `true` | `true` |
 
 
 ## Why
@@ -121,33 +137,14 @@ Any type of contribution is welcome.
 ## Other options
 
 - [BC Math](https://www.php.net/manual/en/book.bc.php)
-
-
-
-Using [BC Math](https://www.php.net/manual/en/book.bc.php) has its own caveats.
-
-The default precision for BC Math computations is `0` (for some reason 🤷‍♂️),
-which assumes either explicitly passing
-[`PHP_FLOAT_DIG` constant](https://www.php.net/manual/en/reserved.constants.php)
-as scale for each computation,
-or setting it globally by calling [`bcscale`](https://www.php.net/manual/en/function.bcscale.php):
-```php
-bcscale(PHP_FLOAT_DIG);
-```
-However, as with most functions with side effects,
-this approach will fail if `bcscale` is called again (e.g., unexpectedly).
-Note that `bcscale` might affect other running threads as well.
-
-As a result, the correct way to compare two numbers for equality
-with maximum precision using BC Math is somewhat verbose:
-```php
-if ( bccomp($a, $b, PHP_FLOAT_DIG) === 0 ) { ... };
-```
+    - has multiple caveats (scale, works with string only, hard not to lose precision)
+- [PHP Decimal](https://php-decimal.io)
+    - only installable as PECL extension
 
 
 ## Acknowledgements
  
- This package implements the algorithm published at:
+ One of the algorithms implemented in this package is published at:
  - [The Floating-Point Guide webpage](https://floating-point-gui.de/errors/comparison/)
  - [brazzy/floating-point-gui.de GitHub repository](https://github.com/brazzy/floating-point-gui.de)
  

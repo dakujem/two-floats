@@ -31,7 +31,6 @@ final class TF_NumericTest extends TestCase
 
     public function testPrecision(): void
     {
-        var_dump(0.0001 - 0.0002);
         $same = [
             [0.0001, 0.0002, 1],
             [0.0011, 0.0012, 0.1],
@@ -55,10 +54,10 @@ final class TF_NumericTest extends TestCase
     private function performTestWithSets(array $same, array $notSame): void
     {
         foreach ($same as $set) {
-            $this->assertTrue(TwoFloats::sameNative(...$set), sprintf('Failing: %s IS equal to %s.', ...$set));
+            $this->assertTrue(TwoFloats::sameRelative(...$set), sprintf('Failing: %s IS equal to %s.', ...$set));
         }
         foreach ($notSame as $set) {
-            $this->assertFalse(TwoFloats::sameNative(...$set), sprintf('Failing: %s IS NOT equal to %s.', ...$set));
+            $this->assertFalse(TwoFloats::sameRelative(...$set), sprintf('Failing: %s IS NOT equal to %s.', ...$set));
         }
     }
 }

@@ -7,24 +7,21 @@ namespace Dakujem;
 /**
  * A static helper class to compare two floating-point numbers.
  *
- * Both `TwoFloats::same()` and `TwoFloats::compare()` methods use BC Math as default
- * with fallback to native PHP algorithm if BC Math is not available.
+ * Usage:
+ *   To discover whether two float numbers are same, or for comparison, these calls can be used:
+ *   TwoFloats::same($a, $b);            // true or false
+ *   TwoFloats::compare($a, $b) === 0;   // or >0 or <0
  *
- * The native PHP-only computation can be forced using `TwoFloats::sameNative()` and `TwoFloats::compareNative()`.
- * This assumes you do not wish to or can not use BC Math.
- * BC Math allows for arbitrary precision computations, it is probably a safer option.
+ *   To limit the precision to certain number of fraction digits, use:
+ *   TwoFloats::same($a, $b, TwoFloats::epsilon(2));  // with precision of 2 fraction digits
  *
- * The BC-Math-only computation can also be forced using `TwoFloats::sameBcm()` and `TwoFloats::compareBcm()`.
- *
- * The native PHP algorithm was implemented based on the following resources:
- *
- * Decimal numbers in PHP:
+ * The native numeric PHP algorithm with relative epsilon was implemented based on the following resources:
  * @link https://floating-point-gui.de/errors/comparison/
  * @link https://floating-point-gui.de/languages/php/
  *
- * Discussions:
- * @link https://floating-point-gui.de/errors/comparison/
+ * Discussions related to floating-point comparisons:
  * @link https://stackoverflow.com/questions/3148937/compare-floats-in-php
+ * @link https://floating-point-gui.de/errors/comparison/
  *
  * @author Andrej Rypak <xrypak@gmail.com>
  */
@@ -32,30 +29,40 @@ final class TwoFloats
 {
     /**
      * Are these two floats "same"?
-     * Uses BC Math when available, with native PHP algorithm as fallback.
      *
-     * The scale represents precision of computation, i.e. number of fraction digits considered.
-     * Numbers between 0 and PHP_FLOAT_DIG (inclusive) are accepted.
+     * When epsilon is null, maximum achievable precision is used, thus the two numbers can be considered same,
+     * as far as native numeric calculations go.
+     *
+     * In other cases, epsilon represents the minimum deviation
+     * such that the two numbers are considered different.
+     *
+     * Epsilon can be calculated from the desired number of fraction digits using
+     * `TwoFloats::scaleToEpsilon`, e.g. `TwoFloats::scaleToEpsilon(4)` for 4-digit precision.
      *
      * @param float $a
      * @param float $b
-     * @param int|null $scale use NULL (or omit) for maximum precision
+     * @param float|null $epsilon use NULL (or omit) for maximum precision
      * @return bool
      */
-    public static function same(float $a, float $b, int $scale = null): bool
+    public static function same(float $a, float $b, float $epsilon = null): bool
     {
-        if (function_exists('bccomp')) {
-            // use BC Math by default when available
-            return static::sameBcm($a, $b, $scale);
+        if ($epsilon === null) {
+            // use the maximum precision available to the platform
+            return static::sameRelative($a, $b);
         }
 
-        // fall back to the the native "epsilon" algorithm when BC Math is not available
-        return static::sameNative($a, $b, static::epsilonFromScale($scale));
+        // use fixed epsilon for better convenience in other cases
+        return static::equal($a, $b, $epsilon);
     }
 
     /**
      * Compare two numbers.
-     * Uses BC Math when available, with native PHP algorithm as fallback.
+     *
+     * When epsilon is null, maximum achievable precision is used, thus the two numbers can be considered same,
+     * as far as native numeric calculations go.
+     *
+     * In other cases, epsilon represents the minimum deviation
+     * such that the two numbers are considered different.
      *
      * Returns:
      *   1  when the  left operand ($a) is greater
@@ -67,37 +74,45 @@ final class TwoFloats
      *
      * @param float $a left operand
      * @param float $b right operand
-     * @param int|null $scale use NULL (or omit) for maximum precision
+     * @param float|null $epsilon use NULL (or omit) for maximum precision
      * @return int
      */
-    public static function compare(float $a, float $b, int $scale = null): int
+    public static function compare(float $a, float $b, float $epsilon = null): int
     {
-        if (function_exists('bccomp')) {
-            // use BC Math by default when available
-            return static::compareBcm($a, $b, $scale);
+        if ($epsilon === null) {
+            // use the maximum precision available to the platform
+            return static::compareRelative($a, $b);
         }
 
-        // fall back to the the native "epsilon" algorithm when BC Math is not available
-        return static::compareNative($a, $b, static::epsilonFromScale($scale));
+        // use fixed epsilon for better convenience in other cases
+        return static::compareEqual($a, $b, $epsilon);
     }
 
     /**
-     * Are these two floats "same"?
-     * Uses BC Math.
+     * Uses a naive numeric PHP implementation with absolute epsilon value.
+     *
+     * The epsilon represents the minimum absolute deviation in the numbers
+     * such that the numbers are considered different.
+     * It might be desirable to explicitly pass an epsilon to limit the precision to certain number of fraction digits.
+     * `TwoFloats::scaleToEpsilon` method can be used to calculate epsilon from the number of fraction digits.
      *
      * @param float $a
      * @param float $b
-     * @param int|null $scale when NULL is passed, PHP_FLOAT_DIG is used as default for maximum precision
-     * @return bool
+     * @param float|null $epsilon when NULL is passed, PHP_FLOAT_EPSILON is used as default for maximum precision
+     * @return bool returns TRUE if the two numbers are equal with the given tolerance
      */
-    public static function sameBcm(float $a, float $b, int $scale = null): bool
+    public static function equal(float $a, float $b, float $epsilon = null): bool
     {
-        return static::compareBcm($a, $b, $scale) === 0;
+        if ($a === $b) {
+            return true;
+        }
+        // TODO this is not adequate for big numbers !
+        return abs($a - $b) < abs($epsilon ?? PHP_FLOAT_EPSILON);
     }
 
     /**
      * Compare two numbers.
-     * Uses BC Math.
+     * Uses a naive numeric PHP implementation with absolute epsilon value.
      *
      * Returns:
      *   1  when the  left operand ($a) is greater
@@ -106,47 +121,52 @@ final class TwoFloats
      *
      * @param float $a left operand
      * @param float $b right operand
-     * @param int|null $scale when NULL is passed, PHP_FLOAT_DIG is used as default for maximum precision
+     * @param float|null $epsilon when NULL is passed, PHP_FLOAT_EPSILON is used as default for maximum precision
      * @return int
      */
-    public static function compareBcm(float $a, float $b, int $scale = null): int
+    public static function compareEqual(float $a, float $b, float $epsilon = null): int
     {
-        /** @noinspection PhpComposerExtensionStubsInspection */
-        return bccomp((string)$a, (string)$b, $scale ?? PHP_FLOAT_DIG);
+        if (static::equal($a, $b, $epsilon)) {
+            return 0;
+        }
+        return $a > $b ? 1 : -1;
     }
 
     /**
      * Are these two floats "same"?
-     * Uses native PHP implementation.
+     * Uses numeric PHP implementation with relative epsilon.
      *
-     * The epsilon represents the maximum accepted relative deviation in the numbers
-     * such that the numbers are still considered equal.
+     * This algorithm should yield the maximum possible precision using native numeric calculations
+     * when used with the default PHP_FLOAT_EPSILON epsilon value.
+     *
+     * The epsilon represents the minimum relative deviation in the numbers
+     * such that the numbers are considered different.
      * Defaults to PHP_FLOAT_EPSILON constant for maximum precision.
-     * Sometimes it might be desirable to explicitly pass an epsilon for certain comparisons.
-     *
-     * Algorithm has been taken from the following great resource:
-     * @link https://floating-point-gui.de/errors/comparison/
+     * Most of the times the default should not be overridden for this method;
+     * for cases where the precision needs to be limited on purpose,
+     * `TwoFloats::equal` method might be a better fit.
+     * See the docs for more info.
      *
      * @param float $a
      * @param float $b
      * @param float|null $epsilon when NULL is passed, PHP_FLOAT_EPSILON is used as default for maximum precision
      * @return bool returns TRUE if the two numbers are "same", FALSE otherwise
      */
-    public static function sameNative(float $a, float $b, float $epsilon = null): bool
+    public static function sameRelative(float $a, float $b, float $epsilon = null): bool
     {
         if ($a === $b) {
             return true;
         }
         $diff = abs($a - $b);
         if ($a === 0.0 || $b === 0.0 || (abs($a) + abs($b) < PHP_FLOAT_MIN)) {
-            return $diff < (($epsilon ?? PHP_FLOAT_EPSILON) * PHP_FLOAT_MIN);
+            return $diff < (abs($epsilon ?? PHP_FLOAT_EPSILON) * PHP_FLOAT_MIN);
         }
-        return $diff / min(abs($a) + abs($b), PHP_FLOAT_MAX) < ($epsilon ?? PHP_FLOAT_EPSILON);
+        return $diff / min(abs($a) + abs($b), PHP_FLOAT_MAX) < abs($epsilon ?? PHP_FLOAT_EPSILON);
     }
 
     /**
      * Compare two numbers.
-     * Uses native PHP implementation.
+     * Uses numeric PHP implementation with relative epsilon.
      *
      * Returns:
      *   1  when the  left operand ($a) is greater
@@ -158,9 +178,9 @@ final class TwoFloats
      * @param float|null $epsilon when NULL is passed, PHP_FLOAT_EPSILON is used as default for maximum precision
      * @return int
      */
-    public static function compareNative(float $a, float $b, float $epsilon = null): int
+    public static function compareRelative(float $a, float $b, float $epsilon = null): int
     {
-        if (static::sameNative($a, $b, $epsilon)) {
+        if (static::sameRelative($a, $b, $epsilon)) {
             return 0;
         }
         return $a > $b ? 1 : -1;
@@ -168,7 +188,8 @@ final class TwoFloats
 
     /**
      * Calculate epsilon value for a given scale.
-     * "Scale" is used for BC Math calculations, "epsilon" for native calculations.
+     * "Scale" is the number of decimals after which the deviation is tolerated.
+     * "Epsilon" is the maximum tolerated deviation.
      *
      * 0                  -->   1
      * 1                  -->   0.1
@@ -178,16 +199,27 @@ final class TwoFloats
      * PHP_FLOAT_DIG      -->   1e-15    *  implementation/hardware specific
      * 42                 -->   1e-42
      *
-     * @param int $scale
+     * @param int $scale number of fraction digits / precision
      * @return float
      */
-    public static function epsilonFromScale(int $scale): float
+    public static function epsilonFromScale(int $scale = PHP_FLOAT_DIG): float
     {
         return $scale === PHP_FLOAT_DIG ? PHP_FLOAT_EPSILON : pow(10, -$scale);
     }
 
     /**
-     * Calculate epsilon value from a scale value.
+     * Shorthand call for `epsilonFromScale`.
+     *
+     * @param int $scale number of fraction digits / precision
+     * @return float
+     */
+    public static function epsilon(int $scale = PHP_FLOAT_DIG): float
+    {
+        return static::epsilonFromScale($scale);
+    }
+
+    /**
+     * Calculate scale value from an epsilon.
      * The inverse of `epsilonFromScale()`.
      *
      * 0                  -->   0
