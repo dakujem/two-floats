@@ -12,6 +12,7 @@
     "php": "^7.2 || ^8.0"
   },
   "require-dev": {
+    "ext-bcmath": "*",
     "nette/tester": "^2.3.2",
     "tracy/tracy": "^2.3"
   },

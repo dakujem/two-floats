@@ -3,14 +3,15 @@
 ![PHP from Packagist](https://img.shields.io/packagist/php-v/dakujem/cumulus)
 [![Build Status](https://travis-ci.org/dakujem/two-floats.svg?branch=main)](https://travis-ci.org/dakujem/two-floats)
 
-A static helper class to compare two floating-point numbers for equality.
+A static helper class to compare two floating-point numbers in PHP.
 
 > 💿 `composer require dakujem/two-floats`
 
 
 ## Comparing floating-point numbers
 
-Let's face it. Comparing floats is a pain in any language. (_Most_, at best.)
+Let's face it. Comparing floats is a pain in any computing language.
+(_Most_, at best.)
 
 If you've ever encountered a WTF moment like the following, you know.
 ```php
@@ -22,54 +23,93 @@ Let's fix it:
 var_dump( Dakujem\TwoFloats::same(0.1 + 0.2, 0.3) ); // bool(true) ... now we are talking
 ```
 
-Or using [BCMath](https://www.php.net/manual/en/book.bc.php):
-```php
-var_dump( bccomp(0.1 + 0.2, 0.3, PHP_FLOAT_DIG) === 0 ); // true
-```
-> Warning:
-> [`PHP_FLOAT_DIG` constant](https://www.php.net/manual/en/reserved.constants.php) must be used
-> with [`bccomp`](https://www.php.net/manual/en/function.bccomp.php),
-> otherwise we would be comparing two zeros.
-
 
 ## Usage
 
 ```php
+use Dakujem\TwoFloats;
+```
+
+Compare for equality:
+```php
 $num1 = 0.17;
 $num2 = 1 - 0.83; // 0.17
 
-if(Dakujem\TwoFloats::same($num1, $num2)) {
+if(TwoFloats::same($num1, $num2)) {
     // ...
 }
 ```
 
-Optionally, a custom _epsilon_ can be used, if desired:
+Optionally, a custom _precision_ can be used, if desired:
 ```php
 $num1 = 0.0095;
 $num2 = 0.0094;
 
-Dakujem\TwoFloats::same($num1, $num2);        // false
-Dakujem\TwoFloats::same($num1, $num2, 0.001); // true
+TwoFloats::same($num1, $num2);     // false
+TwoFloats::same($num1, $num2, 3);  // true
 ```
+
+Using comparison:
+```php
+$c = TwoFloats::compare($num1, $num2 /*, $precision */);
+if( $c > 0 ) {
+    // $num1 > $num2
+} elseif( $c < 0 ) {
+    // $num1 < $num2
+} else {
+    // $num1 == $num2
+}
+```
+
+To force either BC-Math-only or native-only algorithm, the following methods can be used:
+```php
+TwoFloats::sameBcm()
+TwoFloats::sameNative()
+TwoFloats::compareBcm()
+TwoFloats::compareNative()
+```
+
+> A custom _precision_ can be used with all the `TwoFloats`' comparison methods.
 
 
 ## Why
 
 I have not found a reliable tested library I could simply plug-in to my solutions.\
-I found several algorithms that use string comparisons, but for that,
-[BCMath](https://www.php.net/manual/en/book.bc.php) is a better bet, surely.\
-I also found several epsilon-based algos that would not handle edge-cases well.\
-Finally, I decided to implement [the algorithm from "The Floating-Point Guide"](https://floating-point-gui.de/errors/comparison/) for PHP.
-
-Still, using this comparison means you wish not to or are not able to use
-[BCMath](https://www.php.net/manual/en/book.bc.php),
-which should still be a more robust solution as well as your first option.
+I found several questionable algorithms that use string comparisons, but for that,
+[BC Math](https://www.php.net/manual/en/book.bc.php) is a better bet, surely.\
+I also found several epsilon-based numeric algos that would not handle edge-cases well.\
+Finally, I decided to implement [the algorithm from "The Floating-Point Guide"](https://floating-point-gui.de/errors/comparison/) for PHP
+as a fallback to BC Math comparison.
 
 
- ## Acknowledgements
+## BC Math
+
+Using [BC Math](https://www.php.net/manual/en/book.bc.php) has its own caveats.
+
+The default precision for BC Math computations is `0` (for some reason 🤷‍♂️),
+which assumes either explicitly passing
+[`PHP_FLOAT_DIG` constant](https://www.php.net/manual/en/reserved.constants.php)
+as scale for each computation,
+or setting it globally by calling [`bcscale`](https://www.php.net/manual/en/function.bcscale.php):
+```php
+bcscale(PHP_FLOAT_DIG);
+```
+However, as with most functions with side effects,
+this approach will fail if `bcscale` is called again (e.g., unexpectedly).
+Note that `bcscale` might affect other running threads as well.
+
+As a result, the correct way to compare two numbers for equality
+with maximum precision using BC Math is somewhat verbose:
+```php
+if ( bccomp($a, $b, PHP_FLOAT_DIG) === 0 ) { ... };
+```
+
+
+## Acknowledgements
  
- This package implements the algorithm published at
- [The Floating-Point Guide](https://floating-point-gui.de/errors/comparison/).
+ This package implements the algorithm published at:
+ - [The Floating-Point Guide webpage](https://floating-point-gui.de/errors/comparison/)
+ - [brazzy/floating-point-gui.de GitHub repository](https://github.com/brazzy/floating-point-gui.de)
  
  
 ## Contributing
