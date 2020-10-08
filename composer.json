@@ -9,12 +9,11 @@
     }
   ],
   "require": {
-    "php": "^7.2 || ^8.0"
+    "php": "^7.2 || ^8.0",
+    "phpunit/phpunit": "^9.4"
   },
   "require-dev": {
-    "ext-bcmath": "*",
-    "nette/tester": "^2.3.2",
-    "tracy/tracy": "^2.3"
+    "ext-bcmath": "*"
   },
   "autoload": {
     "psr-4": {
@@ -23,8 +22,8 @@
   },
   "scripts": {
     "test": "@test:local",
-    "test:local": "tester tests -C",
-    "test:ci": "tester tests"
+    "test:local": "phpunit tests",
+    "test:ci": "@test:local"
   },
   "scripts-descriptions": {
     "test": "Run application tests. (defaults to local tests)",

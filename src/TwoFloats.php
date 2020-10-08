@@ -42,7 +42,7 @@ final class TwoFloats
      * @param int|null $scale use NULL (or omit) for maximum precision
      * @return bool
      */
-    private static function same(float $a, float $b, int $scale = null): bool
+    public static function same(float $a, float $b, int $scale = null): bool
     {
         if (function_exists('bccomp')) {
             // use BC Math by default when available
@@ -70,7 +70,7 @@ final class TwoFloats
      * @param int|null $scale use NULL (or omit) for maximum precision
      * @return int
      */
-    private static function compare(float $a, float $b, int $scale = null): int
+    public static function compare(float $a, float $b, int $scale = null): int
     {
         if (function_exists('bccomp')) {
             // use BC Math by default when available
@@ -111,7 +111,8 @@ final class TwoFloats
      */
     public static function compareBcm(float $a, float $b, int $scale = null): int
     {
-        return bccomp($a, $b, $scale ?? PHP_FLOAT_DIG);
+        /** @noinspection PhpComposerExtensionStubsInspection */
+        return bccomp((string)$a, (string)$b, $scale ?? PHP_FLOAT_DIG);
     }
 
     /**

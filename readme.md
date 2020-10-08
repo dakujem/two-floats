@@ -87,19 +87,42 @@ and `TwoFloats::epsilonToScale` for the inverse.
 
 ## Why
 
-I have not found a reliable tested library I could simply plug-in to my solutions.\
+I have not found a reliable tested and simple to use library
+I could plug-in to my solutions.\
 I found several questionable algorithms that use string comparisons, but for that,
-[BC Math](https://www.php.net/manual/en/book.bc.php) is a better bet, surely.\
-I also found several epsilon-based numeric algos that would not handle edge-cases well.
+[BC Math](https://www.php.net/manual/en/book.bc.php) must be a better bet,
+I had thought.\
+I also found several epsilon-based numeric algos
+that would not handle edge-cases well.\
+And I also found a couple of arbitrary-precision libraries and extensions
+that are too heavy to use or too slow.
 
-Finally, I decided to implement [the algorithm from "The Floating-Point Guide"](https://floating-point-gui.de/errors/comparison/) for PHP
-as a fallback to BC Math comparison.
+I wanted to implement the numeric algorithm as a fallback for BC math wrapper,
+but using BC Math proved to be a total headache
+(no support for scientific notations `1e-8`
+and the need to convert to strings properly without loosing precision,
+which itself is a problem on its own).
+So i dropped the idea.
 
-I would like this to be the final reliable tested open-source
-plug-in solution for comparing floating-point numbers in PHP.
+Finally, I decided to implement [the algorithm from "The Floating-Point Guide"](https://floating-point-gui.de/errors/comparison/) for PHP.
+It seemed reasonable performant and precise.
+However, it is inconvenient for cases where we want to neglect decimals
+after certain fixed (absolute) precision on purpose,
+because its epsilon works in relative fashion.
+Consequently, I ended up implementing two numeric algorithms instead;
+one with relative epsilon for maximum precision,
+the other one with fixed precision for better practical usability and convenience.
+
+I would like this to become the final reliable tested open-source
+plug-in solution for comparing floating-point numbers in PHP.\
+Any type of contribution is welcome.
 
 
-## BC Math
+## Other options
+
+- [BC Math](https://www.php.net/manual/en/book.bc.php)
+
+
 
 Using [BC Math](https://www.php.net/manual/en/book.bc.php) has its own caveats.
 
