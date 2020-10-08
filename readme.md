@@ -61,15 +61,22 @@ if( $c > 0 ) {
 }
 ```
 
-To force either BC-Math-only or native-only algorithm, the following methods can be used:
-```php
-TwoFloats::sameBcm()
-TwoFloats::sameNative()
-TwoFloats::compareBcm()
-TwoFloats::compareNative()
-```
+To force either BC-Math-only or native-only algorithm, methods with `*Bcm` and `*Native` suffixes can be used:
 
-> A custom _precision_ can be used with all the `TwoFloats`' comparison methods.
+```php
+TwoFloats::same( ... );          // BC Math by default, with native fallback
+TwoFloats::sameBcm( ... );       // BC Math only
+TwoFloats::sameNative( ... );    // native numeric algo only
+
+TwoFloats::compare( ... );       // BC Math by default, with native fallback
+TwoFloats::compareBcm( ... );    // BC Math only
+TwoFloats::compareNative( ... ); // native numeric algo only
+```
+> A custom _precision_ can be used with all the comparison methods above.
+
+The native implementation uses _epsilon_ instead of _scale_ for precision.\
+The method `TwoFloats::scaleToEpsilon` can be used to calculate epsilon from scale
+and `TwoFloats::epsilonToScale` for the inverse.
 
 
 ## Why
@@ -77,9 +84,13 @@ TwoFloats::compareNative()
 I have not found a reliable tested library I could simply plug-in to my solutions.\
 I found several questionable algorithms that use string comparisons, but for that,
 [BC Math](https://www.php.net/manual/en/book.bc.php) is a better bet, surely.\
-I also found several epsilon-based numeric algos that would not handle edge-cases well.\
+I also found several epsilon-based numeric algos that would not handle edge-cases well.
+
 Finally, I decided to implement [the algorithm from "The Floating-Point Guide"](https://floating-point-gui.de/errors/comparison/) for PHP
 as a fallback to BC Math comparison.
+
+I would like this to be the final reliable tested open-source
+plug-in solution for comparing floating-point numbers in PHP.
 
 
 ## BC Math
