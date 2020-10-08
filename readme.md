@@ -1,5 +1,8 @@
 # Two Floats
 
+![PHP from Packagist](https://img.shields.io/packagist/php-v/dakujem/cumulus)
+[![Build Status](https://travis-ci.org/dakujem/two-floats.svg?branch=main)](https://travis-ci.org/dakujem/two-floats)
+
 A static helper class to compare two floating-point numbers for equality.
 
 > 💿 `composer require dakujem/two-floats`
@@ -24,9 +27,9 @@ Or using [BCMath](https://www.php.net/manual/en/book.bc.php):
 var_dump( bccomp(0.1 + 0.2, 0.3, PHP_FLOAT_DIG) === 0 ); // true
 ```
 > Warning:
-> [PHP_FLOAT_DIG](https://www.php.net/manual/en/reserved.constants.php) must be used
+> [`PHP_FLOAT_DIG` constant](https://www.php.net/manual/en/reserved.constants.php) must be used
 > with [`bccomp`](https://www.php.net/manual/en/function.bccomp.php),
-> otherwise we would be comparing tow zeros.
+> otherwise we would be comparing two zeros.
 
 
 ## Usage
