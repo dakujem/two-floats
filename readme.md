@@ -19,6 +19,15 @@ Let's fix it:
 var_dump( Dakujem\TwoFloats::same(0.1 + 0.2, 0.3) ); // bool(true) ... now we are talking
 ```
 
+Or using [BCMath](https://www.php.net/manual/en/book.bc.php):
+```php
+var_dump( bccomp(0.1 + 0.2, 0.3, PHP_FLOAT_DIG) === 0 ); // true
+```
+> Warning:
+> [PHP_FLOAT_DIG](https://www.php.net/manual/en/reserved.constants.php) must be used
+> with [`bccomp`](https://www.php.net/manual/en/function.bccomp.php),
+> otherwise we would be comparing tow zeros.
+
 
 ## Usage
 
@@ -46,16 +55,17 @@ Dakujem\TwoFloats::same($num1, $num2, 0.001); // true
 I have not found a reliable tested library I could simply plug-in to my solutions.\
 I found several algorithms that use string comparisons, but for that,
 [BCMath](https://www.php.net/manual/en/book.bc.php) is a better bet, surely.\
+I also found several epsilon-based algos that would not handle edge-cases well.\
 Finally, I decided to implement [the algorithm from "The Floating-Point Guide"](https://floating-point-gui.de/errors/comparison/) for PHP.
 
-Still, using this comparison means you do not wish to or can not use
+Still, using this comparison means you wish not to or are not able to use
 [BCMath](https://www.php.net/manual/en/book.bc.php),
-which should still be a more robust solution.
+which should still be a more robust solution as well as your first option.
 
 
  ## Acknowledgements
  
- This package implements algorithm published at
+ This package implements the algorithm published at
  [The Floating-Point Guide](https://floating-point-gui.de/errors/comparison/).
  
  
