@@ -1,5 +1,12 @@
 # Two Floats
 
+
+## 🚧 WAIT At the moment, this is not usable at all.
+I tried. I failed. Let me fix it once I regain balance. 🤷‍♂️
+
+---
+
+
 ![PHP from Packagist](https://img.shields.io/packagist/php-v/dakujem/cumulus)
 [![Build Status](https://travis-ci.org/dakujem/two-floats.svg?branch=main)](https://travis-ci.org/dakujem/two-floats)
 
@@ -99,6 +106,52 @@ when an epsilon is explicitly passed.
 | Comparison | Epsilon (ε) | Relative ε algo | Absolute ε algo |
 |------------|-------------|:----------------|:----------------|
 | `0.1 == 0.1` | `1` | `true` | `true` |
+
+
+## Findings
+
+```php
+$f1 = 1.2432345436354879e-42; // will print unchanged
+$f2 = 9.2432345436354879e-42; // will loose precision in the last digit
+```
+
+Precision is guaranteed for 15 decimal digits (fractional digits or decimal),
+`~15.9` according to [wikipedia](https://en.wikipedia.org/wiki/Floating-point_arithmetic).
+In other words, number `1.2345` has 5 digits, as well as `12345`,
+they need the same precision to be stored.
+
+Sprintf can be used to print numbers n PHP, "lossless" for double:
+```php
+sprintf('%.17g', $number);
+```
+Note that float/double is inherently not lossless,
+this kind of print only ensures that no precision
+is lost when printing a float number,
+i.e. converting the string back to float should result
+in exactly the same number.
+
+Comparing using strings is not reliable,
+only printing the number to string and then working with BC Math and such.
+But there's the problem with scientific notation (e.g. `1e-3`) that BC Math can not handle.
+
+```php
+$f1 = 1_000_000.000_000;
+$f2 = 1e6;
+$f3 = 0.1+0.2;
+$f4 = 0.3;
+
+// thee two are equal in string
+var_dump(sprintf('%.17g', $f1));
+var_dump(sprintf('%.17g', $f2));
+
+// this won't be equal
+var_dump(sprintf('%.17g', $f3));
+var_dump(sprintf('%.17g', $f4));
+
+// this works, except for the scientific notation ...
+var_dump(bcadd('0.1', '0.2', PHP_FLOAT_DIG));
+var_dump(bccomp(bcadd('0.1', '0.2', PHP_FLOAT_DIG), '0.3', PHP_FLOAT_DIG));
+```
 
 
 ## Why
